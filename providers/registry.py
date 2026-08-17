@@ -23,7 +23,6 @@ OPENAI_COMPATIBLE_CONFIGS = {
             "llama-3.1-8b-instant",
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
-            "qwen/qwen3.6-27b",
         ],
     },
     "Cerebras": {
