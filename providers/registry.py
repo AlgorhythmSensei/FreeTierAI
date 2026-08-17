@@ -116,6 +116,21 @@ _PLACEHOLDER_VALUES = {
     "not_a_real_key",
 }
 
+_NON_CHAT_MODEL_MARKERS = (
+    "embedding",
+    "reranker",
+    "safety",
+    "guard",
+    "moderation",
+    "whisper",
+)
+
+
+def _is_chat_model(model_id: str) -> bool:
+    """Return True for models suitable for chat completions."""
+    lowered = model_id.lower()
+    return not any(marker in lowered for marker in _NON_CHAT_MODEL_MARKERS)
+
 
 def refresh_env_from_file() -> None:
     """Reload environment variables from the project .env file."""
@@ -188,7 +203,11 @@ def _fetch_groq_models() -> list[str]:
             timeout=3,
         )
         response.raise_for_status()
-        models = [m["id"] for m in response.json().get("data", [])]
+        models = [
+            m["id"]
+            for m in response.json().get("data", [])
+            if _is_chat_model(m["id"])
+        ]
         return models if models else OPENAI_COMPATIBLE_CONFIGS["Groq"]["models"]
     except Exception:
         return OPENAI_COMPATIBLE_CONFIGS["Groq"]["models"]
