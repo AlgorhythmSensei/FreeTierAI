@@ -46,7 +46,7 @@ providers/
 
 ### `providers/registry.py`
 
-- `OPENAI_COMPATIBLE_CONFIGS` — base URL, env key, verified free model list for Groq, Cerebras, OpenRouter
+- `OPENAI_COMPATIBLE_CONFIGS` — base URL, env key, verified free model list for Groq and OpenRouter
 - `NATIVE_PROVIDER_CONFIGS` — env key, model list for Google Gemini
 - `build_provider(provider_name, model_name)` — factory; returns `LLMProvider` instance
 - `get_models(provider_name)` — returns model list; OpenRouter fetches live from API (`:free` filter), others use hardcoded verified lists
@@ -75,7 +75,7 @@ class LLMProvider(ABC):
 
 ### `providers/openai_compatible.py`
 
-Adapter for any provider that speaks the OpenAI Chat Completions wire format. Lazy-loads the `openai` client on first use. Covers Groq, Cerebras, OpenRouter.
+Adapter for any provider that speaks the OpenAI Chat Completions wire format. Lazy-loads the `openai` client on first use. Covers Groq and OpenRouter.
 
 ### `providers/gemini.py`
 
@@ -243,7 +243,6 @@ cp .env.example .env
 
 ```
 GROQ_API_KEY=gsk_...
-CEREBRAS_API_KEY=csk-...
 OPENROUTER_API_KEY=sk-or-v1-...
 GEMINI_API_KEY=...
 ```
@@ -267,7 +266,7 @@ Opens at `http://localhost:8501`.
 
 - **Single-provider chat** — full multi-turn conversation with context passed on every call
 - **Comparison mode** — same prompt sent to two providers simultaneously, rendered side-by-side; each provider maintains its own conversation history for multi-turn use
-- **Per-message metadata** — provider name, model ID, input/output token counts, response time shown under each assistant message
+- **Per-message metadata** — model ID, input→output token counts, and response time shown under each assistant message; comparison mode uses a compact single-line caption per provider
 - **Session stats** — running totals in sidebar: input tokens, output tokens, elapsed time, message count
 - **CSV export** — all messages + metadata in one file
 - **JSON export** — full session data for analysis
@@ -287,7 +286,7 @@ User messages and model responses are checked against a word-list regex before d
 | Package | Purpose |
 |---|---|
 | `streamlit` | UI framework |
-| `openai` | OpenAI-compatible client (Groq, Cerebras, OpenRouter) |
+| `openai` | OpenAI-compatible client (Groq, OpenRouter) |
 | `google-genai` | Google Gemini SDK |
 | `requests` | OpenRouter live model fetch |
 | `python-dotenv` | `.env` file loading |
