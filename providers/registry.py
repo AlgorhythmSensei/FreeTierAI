@@ -32,8 +32,9 @@ OPENAI_COMPATIBLE_CONFIGS = {
         "env_key": "CEREBRAS_API_KEY",
         "website": "https://cloud.cerebras.ai/",
         "models": [
-            "llama-3.3-70b",
-            "llama3.1-70b",
+            "gemma-4-31b",
+            "gpt-oss-120b",
+            "zai-glm-4.7",
         ],
     },
     "OpenRouter": {
@@ -181,12 +182,38 @@ def has_api_key(provider_name: str) -> bool:
 
 def clear_model_cache(provider_name: Optional[str] = None) -> None:
     """Clear cached dynamic model fetches for one or all providers."""
+    if provider_name in {None, "Cerebras"}:
+        _fetch_cerebras_models.cache_clear()
     if provider_name in {None, "Groq"}:
         _fetch_groq_models.cache_clear()
     if provider_name in {None, "OpenRouter"}:
         _fetch_openrouter_models.cache_clear()
     if provider_name in {None, "Mistral"}:
         _fetch_mistral_models.cache_clear()
+
+
+@lru_cache(maxsize=8)
+def _fetch_cerebras_models() -> list[str]:
+    """Fetch available models from Cerebras API."""
+    try:
+        api_key = os.getenv("CEREBRAS_API_KEY", "")
+        if not api_key:
+            return OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
+
+        response = requests.get(
+            "https://api.cerebras.ai/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=3,
+        )
+        response.raise_for_status()
+        models = [
+            model["id"]
+            for model in response.json().get("data", [])
+            if _is_chat_model(model["id"])
+        ]
+        return models if models else OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
+    except Exception:
+        return OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
 
 
 @lru_cache(maxsize=8)
@@ -257,7 +284,7 @@ def get_models(provider_name: str, refresh: bool = False) -> list[str]:
     """
     Get available models for a provider.
 
-    Attempts to fetch dynamically from provider API (Groq, OpenRouter, Mistral)
+    Attempts to fetch dynamically from provider API (Cerebras, Groq, OpenRouter, Mistral)
     when a valid API key is configured. Falls back to hardcoded lists if the API
     call fails or the provider does not support dynamic listing.
     """
@@ -265,7 +292,9 @@ def get_models(provider_name: str, refresh: bool = False) -> list[str]:
     if refresh:
         clear_model_cache(provider_name)
 
-    if provider_name == "Groq":
+    if provider_name == "Cerebras":
+        return _fetch_cerebras_models()
+    elif provider_name == "Groq":
         return _fetch_groq_models()
     elif provider_name == "OpenRouter":
         return _fetch_openrouter_models()
