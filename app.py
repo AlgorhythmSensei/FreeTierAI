@@ -390,15 +390,7 @@ else:
                             if r1.get("error"):
                                 st.error(f"❌ {r1['error']}")
                             else:
-                                mc1, mc2, mc3, mc4 = st.columns(4)
-                                with mc1:
-                                    st.caption(f"**Model:** {r1.get('model', 'N/A')}")
-                                with mc2:
-                                    st.caption(f"**In:** {r1.get('input_tokens', 0)}")
-                                with mc3:
-                                    st.caption(f"**Out:** {r1.get('output_tokens', 0)}")
-                                with mc4:
-                                    st.caption(f"**Time:** {r1.get('elapsed_seconds', 0):.2f}s")
+                                st.caption(f"**{r1.get('model', 'N/A')}** · {r1.get('input_tokens', 0)}→{r1.get('output_tokens', 0)} tokens · {r1.get('elapsed_seconds', 0):.2f}s")
             if asst_2:
                 with col2:
                     provider_label = r2.get("provider", "Provider 2") if r2 else "Provider 2"
@@ -409,15 +401,7 @@ else:
                             if r2.get("error"):
                                 st.error(f"❌ {r2['error']}")
                             else:
-                                mc1, mc2, mc3, mc4 = st.columns(4)
-                                with mc1:
-                                    st.caption(f"**Model:** {r2.get('model', 'N/A')}")
-                                with mc2:
-                                    st.caption(f"**In:** {r2.get('input_tokens', 0)}")
-                                with mc3:
-                                    st.caption(f"**Out:** {r2.get('output_tokens', 0)}")
-                                with mc4:
-                                    st.caption(f"**Time:** {r2.get('elapsed_seconds', 0):.2f}s")
+                                st.caption(f"**{r2.get('model', 'N/A')}** · {r2.get('input_tokens', 0)}→{r2.get('output_tokens', 0)} tokens · {r2.get('elapsed_seconds', 0):.2f}s")
 
             step = 1 + (1 if asst_1 else 0) + (1 if asst_2 else 0)
             i += step
@@ -471,14 +455,10 @@ if user_input:
                             st.write(response_1.text)
 
                         # Show metrics
-                        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-                        with metric_col1:
-                            st.metric("Input Tokens", response_1.input_tokens)
-                        with metric_col2:
-                            st.metric("Output Tokens", response_1.output_tokens)
-                        with metric_col3:
-                            st.metric("Total Tokens", response_1.total_tokens)
-                        with metric_col4:
+                        mc1, mc2 = st.columns(2)
+                        with mc1:
+                            st.metric("Tokens (in→out)", f"{response_1.input_tokens}→{response_1.output_tokens}")
+                        with mc2:
                             st.metric("Time (s)", f"{response_1.elapsed_seconds:.3f}")
 
                         report_1 = {
@@ -509,14 +489,10 @@ if user_input:
                             st.write(response_2.text)
 
                         # Show metrics
-                        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-                        with metric_col1:
-                            st.metric("Input Tokens", response_2.input_tokens)
-                        with metric_col2:
-                            st.metric("Output Tokens", response_2.output_tokens)
-                        with metric_col3:
-                            st.metric("Total Tokens", response_2.total_tokens)
-                        with metric_col4:
+                        mc1, mc2 = st.columns(2)
+                        with mc1:
+                            st.metric("Tokens (in→out)", f"{response_2.input_tokens}→{response_2.output_tokens}")
+                        with mc2:
                             st.metric("Time (s)", f"{response_2.elapsed_seconds:.3f}")
 
                         report_2 = {

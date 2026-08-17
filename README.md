@@ -9,11 +9,10 @@ A Streamlit app for comparing free-tier LLM providers side-by-side. No paid mode
 | Provider | API Console | Free Model Tier |
 |---|---|---|
 | **Groq** | https://console.groq.com/keys | Yes — high-speed inference |
-| **Cerebras** | https://cloud.cerebras.ai/ | Yes — wafer-scale hardware |
-| **OpenRouter** | https://openrouter.ai/keys | Yes — `:free` suffix models only |
+| **OpenRouter** | https://openrouter.ai/keys | Yes — `:free` suffix models only, fetched live |
 | **Google Gemini** | https://aistudio.google.com/apikey | Yes — Flash/Flash-Lite models |
 
-All non-free providers (Mistral, NVIDIA NIM, Cloudflare Workers AI) have been removed. Every model in the dropdown has been verified against the provider's free tier.
+Cerebras was removed — all models now return 402 Payment Required on free keys. Every provider and model listed has been verified with a live API call.
 
 ---
 
@@ -212,13 +211,13 @@ Streamlit → User: st.rerun() → display side-by-side history
 - `openai/gpt-oss-120b`
 - `openai/gpt-oss-20b`
 
-### Cerebras
-- `gpt-oss-120b`
-- `gemma-4-31b`
-- `zai-glm-4.7`
-
 ### OpenRouter
-Fetched live from `https://openrouter.ai/api/v1/models` — only models with `:free` suffix are shown. Falls back to a hardcoded list if the API is unreachable.
+Fetched live from `https://openrouter.ai/api/v1/models` — only models with `:free` suffix are shown. Falls back to a hardcoded list (verified 2026-08-17) if the API is unreachable:
+- `nvidia/nemotron-3-super-120b-a12b:free`
+- `nvidia/nemotron-3.5-lightning:free`
+- `nvidia/nemotron-nano-9b-v2:free`
+- `google/gemma-4-31b-it:free`
+- `openai/gpt-oss-20b:free`
 
 ### Google Gemini
 - `gemini-flash-lite-latest`

@@ -25,28 +25,17 @@ OPENAI_COMPATIBLE_CONFIGS = {
             "openai/gpt-oss-20b",
         ],
     },
-    "Cerebras": {
-        "base_url": "https://api.cerebras.ai/v1",
-        "env_key": "CEREBRAS_API_KEY",
-        "website": "https://cloud.cerebras.ai/",
-        # Verified free-tier chat models only — https://inference-docs.cerebras.ai/introduction
-        "models": [
-            "gpt-oss-120b",
-            "gemma-4-31b",
-            "zai-glm-4.7",
-        ],
-    },
     "OpenRouter": {
         "base_url": "https://openrouter.ai/api/v1",
         "env_key": "OPENROUTER_API_KEY",
         "website": "https://openrouter.ai/keys",
-        # Only :free models — paid models are excluded by design
+        # Only :free models — fetched live; fallback list verified 2026-08-17
         "models": [
-            "meta-llama/llama-3.3-70b-instruct:free",
-            "meta-llama/llama-3.1-8b-instruct:free",
-            "mistralai/mistral-7b-instruct:free",
-            "google/gemma-3-27b-it:free",
-            "qwen/qwen3-235b-a22b:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "nvidia/nemotron-3.5-lightning:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "google/gemma-4-31b-it:free",
+            "openai/gpt-oss-20b:free",
         ],
     },
 }
@@ -69,7 +58,6 @@ NATIVE_PROVIDER_CONFIGS = {
 _PLACEHOLDER_VALUES = {
     "your_key",
     "your_groq_api_key_here",
-    "your_cerebras_api_key_here",
     "your_openrouter_api_key_here",
     "your_gemini_api_key_here",
     "your_api_key_here",
