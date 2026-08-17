@@ -1,5 +1,5 @@
 # providers/openai_compatible.py
-"""Adapter for OpenAI-compatible providers (Groq, Cerebras, OpenRouter, Mistral, NVIDIA NIM)."""
+"""Adapter for OpenAI-compatible providers (Groq, Cerebras, OpenRouter)."""
 
 import time
 from typing import Optional
@@ -11,7 +11,7 @@ class OpenAICompatibleProvider(LLMProvider):
     """
     Adapter for providers that speak the OpenAI Chat Completions wire format.
     
-    Covers: Groq, Cerebras, OpenRouter, Mistral, NVIDIA NIM
+    Covers: Groq, Cerebras, OpenRouter
     """
 
     def __init__(self, base_url: str, api_key: str, model: str):

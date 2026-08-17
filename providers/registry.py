@@ -6,7 +6,6 @@ import re
 import requests
 from typing import Optional
 from functools import lru_cache
-import time
 from dotenv import load_dotenv
 
 # ---------------------------------------------------------------------------
@@ -18,22 +17,23 @@ OPENAI_COMPATIBLE_CONFIGS = {
         "base_url": "https://api.groq.com/openai/v1",
         "env_key": "GROQ_API_KEY",
         "website": "https://console.groq.com/keys",
+        # Verified free-tier chat models only — https://console.groq.com/docs/models
         "models": [
-            "mixtral-8x7b-32768",
-            "mixtral-8x7b-32768-v0.1",
             "llama-3.3-70b-versatile",
-            "llama-3.1-70b-versatile",
             "llama-3.1-8b-instant",
-            "gemma2-9b-it",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b",
         ],
     },
     "Cerebras": {
         "base_url": "https://api.cerebras.ai/v1",
         "env_key": "CEREBRAS_API_KEY",
         "website": "https://cloud.cerebras.ai/",
+        # Verified free-tier chat models only — https://inference-docs.cerebras.ai/introduction
         "models": [
-            "gemma-4-31b",
             "gpt-oss-120b",
+            "gemma-4-31b",
             "zai-glm-4.7",
         ],
     },
@@ -41,42 +41,13 @@ OPENAI_COMPATIBLE_CONFIGS = {
         "base_url": "https://openrouter.ai/api/v1",
         "env_key": "OPENROUTER_API_KEY",
         "website": "https://openrouter.ai/keys",
+        # Only :free models — paid models are excluded by design
         "models": [
-            "meta-llama/llama-3.3-70b-instruct",
-            "meta-llama/llama-3.1-70b-instruct",
-            "mistralai/mistral-7b-instruct",
-            "nousresearch/nous-hermes-2-mixtral-8x7b-dpo",
-        ],
-    },
-    "Mistral": {
-        "base_url": "https://api.mistral.ai/v1",
-        "env_key": "MISTRAL_API_KEY",
-        "website": "https://console.mistral.ai/api-keys/",
-        "models": [
-            "mistral-large-latest",
-            "mistral-medium-latest",
-            "mistral-small-latest",
-            "open-mistral-7b",
-        ],
-    },
-    "NVIDIA NIM": {
-        "base_url": "https://integrate.api.nvidia.com/v1",
-        "env_key": "NVIDIA_API_KEY",
-        "website": "https://build.nvidia.com/",
-        "models": [
-            "meta/llama3-70b-instruct",
-            "mistralai/mixtral-8x7b-instruct-v0.1",
-        ],
-    },
-    "Cloudflare Workers AI": {
-        "base_url": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
-        "env_key": "CLOUDFLARE_API_TOKEN",
-        "account_id_env": "CLOUDFLARE_ACCOUNT_ID",
-        "website": "https://dash.cloudflare.com/",
-        "models": [
-            "@cf/meta/llama-3.1-8b-instruct",
-            "@cf/meta/llama-3.2-1b-instruct",
-            "@cf/qwen/qwen1.5-0.5b-chat",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "meta-llama/llama-3.1-8b-instruct:free",
+            "mistralai/mistral-7b-instruct:free",
+            "google/gemma-3-27b-it:free",
+            "qwen/qwen3-235b-a22b:free",
         ],
     },
 }
@@ -86,8 +57,8 @@ NATIVE_PROVIDER_CONFIGS = {
         "env_key": "GEMINI_API_KEY",
         "website": "https://aistudio.google.com/apikey",
         "models": [
-            "gemini-2.5-flash",
-            "gemini-2.5-flash-lite",
+            "gemini-flash-lite-latest",
+            "gemini-flash-latest",
         ],
     },
 }
@@ -101,10 +72,7 @@ _PLACEHOLDER_VALUES = {
     "your_groq_api_key_here",
     "your_cerebras_api_key_here",
     "your_openrouter_api_key_here",
-    "your_mistral_api_key_here",
-    "your_nvidia_nim_api_key_here",
     "your_gemini_api_key_here",
-    "your_cloudflare_api_token_here",
     "your_api_key_here",
     "changeme",
     "change_me",
@@ -181,99 +149,27 @@ def has_api_key(provider_name: str) -> bool:
 
 
 def clear_model_cache(provider_name: Optional[str] = None) -> None:
-    """Clear cached dynamic model fetches for one or all providers."""
-    if provider_name in {None, "Cerebras"}:
-        _fetch_cerebras_models.cache_clear()
-    if provider_name in {None, "Groq"}:
-        _fetch_groq_models.cache_clear()
+    """Clear cached dynamic model fetches (OpenRouter only)."""
     if provider_name in {None, "OpenRouter"}:
         _fetch_openrouter_models.cache_clear()
-    if provider_name in {None, "Mistral"}:
-        _fetch_mistral_models.cache_clear()
-
-
-@lru_cache(maxsize=8)
-def _fetch_cerebras_models() -> list[str]:
-    """Fetch available models from Cerebras API."""
-    try:
-        api_key = os.getenv("CEREBRAS_API_KEY", "")
-        if not api_key:
-            return OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
-
-        response = requests.get(
-            "https://api.cerebras.ai/v1/models",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=3,
-        )
-        response.raise_for_status()
-        models = [
-            model["id"]
-            for model in response.json().get("data", [])
-            if _is_chat_model(model["id"])
-        ]
-        return models if models else OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
-    except Exception:
-        return OPENAI_COMPATIBLE_CONFIGS["Cerebras"]["models"]
-
-
-@lru_cache(maxsize=8)
-def _fetch_groq_models() -> list[str]:
-    """Fetch available models from Groq API."""
-    try:
-        api_key = os.getenv("GROQ_API_KEY", "")
-        if not api_key:
-            return OPENAI_COMPATIBLE_CONFIGS["Groq"]["models"]
-        
-        response = requests.get(
-            "https://api.groq.com/openai/v1/models",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=3,
-        )
-        response.raise_for_status()
-        models = [
-            m["id"]
-            for m in response.json().get("data", [])
-            if _is_chat_model(m["id"])
-        ]
-        return models if models else OPENAI_COMPATIBLE_CONFIGS["Groq"]["models"]
-    except Exception:
-        return OPENAI_COMPATIBLE_CONFIGS["Groq"]["models"]
 
 
 @lru_cache(maxsize=8)
 def _fetch_openrouter_models() -> list[str]:
-    """Fetch available models from OpenRouter API."""
+    """Fetch free-tier models from OpenRouter API (only :free models)."""
     try:
         response = requests.get(
             "https://openrouter.ai/api/v1/models",
             timeout=3,
         )
         response.raise_for_status()
-        models = [m["id"] for m in response.json().get("data", [])]
-        # Filter to more popular/relevant models only
-        return models[:20] if models else OPENAI_COMPATIBLE_CONFIGS["OpenRouter"]["models"]
+        models = [
+            m["id"] for m in response.json().get("data", [])
+            if m["id"].endswith(":free") and _is_chat_model(m["id"])
+        ]
+        return models if models else OPENAI_COMPATIBLE_CONFIGS["OpenRouter"]["models"]
     except Exception:
         return OPENAI_COMPATIBLE_CONFIGS["OpenRouter"]["models"]
-
-
-@lru_cache(maxsize=8)
-def _fetch_mistral_models() -> list[str]:
-    """Fetch available models from Mistral API."""
-    try:
-        api_key = os.getenv("MISTRAL_API_KEY", "")
-        if not api_key:
-            return OPENAI_COMPATIBLE_CONFIGS["Mistral"]["models"]
-        
-        response = requests.get(
-            "https://api.mistral.ai/v1/models",
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=3,
-        )
-        response.raise_for_status()
-        models = [m["id"] for m in response.json().get("data", [])]
-        return models if models else OPENAI_COMPATIBLE_CONFIGS["Mistral"]["models"]
-    except Exception:
-        return OPENAI_COMPATIBLE_CONFIGS["Mistral"]["models"]
 
 
 # ---------------------------------------------------------------------------
@@ -284,22 +180,16 @@ def get_models(provider_name: str, refresh: bool = False) -> list[str]:
     """
     Get available models for a provider.
 
-    Attempts to fetch dynamically from provider API (Cerebras, Groq, OpenRouter, Mistral)
-    when a valid API key is configured. Falls back to hardcoded lists if the API
-    call fails or the provider does not support dynamic listing.
+    Returns the curated free-tier model list for each provider.
+    OpenRouter models are fetched live (filtered to :free only); all others use
+    verified hardcoded lists.
     """
     refresh_env_from_file()
     if refresh:
         clear_model_cache(provider_name)
 
-    if provider_name == "Cerebras":
-        return _fetch_cerebras_models()
-    elif provider_name == "Groq":
-        return _fetch_groq_models()
-    elif provider_name == "OpenRouter":
+    if provider_name == "OpenRouter":
         return _fetch_openrouter_models()
-    elif provider_name == "Mistral":
-        return _fetch_mistral_models()
     elif provider_name in OPENAI_COMPATIBLE_CONFIGS:
         return OPENAI_COMPATIBLE_CONFIGS[provider_name].get("models", [])
     elif provider_name in NATIVE_PROVIDER_CONFIGS:
